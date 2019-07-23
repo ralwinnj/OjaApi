@@ -35,7 +35,8 @@ namespace BcmmOja.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+
+//                optionsBuilder.UseLazyLoadingProxies();
                 optionsBuilder.UseSqlServer("Data Source=W001942;Initial Catalog=bcmm_oja;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
             }
         }
@@ -47,21 +48,20 @@ namespace BcmmOja.Models
                 entity.ToTable("applicant");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__applican__3213E83E498F8D39")
+                    .HasName("UQ__applican__3213E83EF300806A")
                     .IsUnique();
 
                 entity.HasIndex(e => e.IdNumber)
-                    .HasName("UQ__applican__D58CDE11FE7439E4")
+                    .HasName("UQ__applican__D58CDE11D64F9B8C")
                     .IsUnique();
 
                 entity.HasIndex(e => e.PhoneNumber)
-                    .HasName("UQ__applican__A1936A6BF4B4A24E")
+                    .HasName("UQ__applican__A1936A6BB2B5D386")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Address)
-                    .IsRequired()
                     .HasColumnName("address")
                     .HasMaxLength(100)
                     .IsUnicode(false);
@@ -94,43 +94,36 @@ namespace BcmmOja.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.FirstName)
-                    .IsRequired()
                     .HasColumnName("first_name")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.IdNumber)
-                    .IsRequired()
                     .HasColumnName("id_number")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Language)
-                    .IsRequired()
                     .HasColumnName("language")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.LastName)
-                    .IsRequired()
                     .HasColumnName("last_name")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Nationality)
-                    .IsRequired()
                     .HasColumnName("nationality")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.PhoneNumber)
-                    .IsRequired()
                     .HasColumnName("phone_number")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Race)
-                    .IsRequired()
                     .HasColumnName("race")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -138,13 +131,11 @@ namespace BcmmOja.Models
                 entity.Property(e => e.SarsRegistered).HasColumnName("sars_registered");
 
                 entity.Property(e => e.SarsTaxNumber)
-                    .IsRequired()
                     .HasColumnName("sars_tax-number")
                     .HasMaxLength(20)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Title)
-                    .IsRequired()
                     .HasColumnName("title")
                     .HasMaxLength(10)
                     .IsUnicode(false);
@@ -159,51 +150,33 @@ namespace BcmmOja.Models
             {
                 entity.ToTable("applicant_document");
 
-                entity.HasIndex(e => e.Id)
-                    .HasName("UQ__applican__3213E83E086C1571")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
                     .HasDefaultValueSql("(sysdatetime())");
 
-                entity.Property(e => e.Document)
-                    .IsRequired()
-                    .HasColumnName("document");
-
                 entity.Property(e => e.DocumentFormat)
-                    .IsRequired()
                     .HasColumnName("document_format")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.DocumentName)
-                    .IsRequired()
                     .HasColumnName("document_name")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.DocumentPath)
-                    .IsRequired()
                     .HasColumnName("document_path")
                     .HasMaxLength(150)
                     .IsUnicode(false);
 
                 entity.Property(e => e.DocumentType)
-                    .IsRequired()
                     .HasColumnName("document_type")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
-
-                entity.HasOne(d => d.FkApplicant)
-                    .WithMany(p => p.ApplicantDocument)
-                    .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__applicant__fk_ap__6E01572D");
             });
 
             modelBuilder.Entity<ApplicantVacancy>(entity =>
@@ -285,7 +258,7 @@ namespace BcmmOja.Models
                     .WithMany(p => p.ApplicantVacancy)
                     .HasForeignKey(d => d.FkApplicantId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__applicant__fk_ap__6EF57B66");
+                    .HasConstraintName("FK__applicant__fk_ap__6E01572D");
             });
 
             modelBuilder.Entity<ComputerLiteracy>(entity =>
@@ -293,17 +266,16 @@ namespace BcmmOja.Models
                 entity.ToTable("computer_literacy");
 
                 entity.HasIndex(e => e.FkApplicantId)
-                    .HasName("UQ__computer__44609BBD96FEEE6C")
+                    .HasName("UQ__computer__44609BBDE95DD8F6")
                     .IsUnique();
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__computer__3213E83EB35C30B8")
+                    .HasName("UQ__computer__3213E83E19B61E6A")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Competency)
-                    .IsRequired()
                     .HasColumnName("competency")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -315,7 +287,6 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.Skill)
-                    .IsRequired()
                     .HasColumnName("skill")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -323,8 +294,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithOne(p => p.ComputerLiteracy)
                     .HasForeignKey<ComputerLiteracy>(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__computer___fk_ap__6FE99F9F");
+                    .HasConstraintName("FK__computer___fk_ap__70DDC3D8");
             });
 
             modelBuilder.Entity<CriminalRecord>(entity =>
@@ -332,7 +302,7 @@ namespace BcmmOja.Models
                 entity.ToTable("criminal_record");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__criminal__3213E83E9B4E57EB")
+                    .HasName("UQ__criminal__3213E83E8DB32771")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
@@ -342,7 +312,6 @@ namespace BcmmOja.Models
                     .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.DateFinalized)
-                    .IsRequired()
                     .HasColumnName("date_finalized")
                     .HasMaxLength(150)
                     .IsUnicode(false);
@@ -350,7 +319,6 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.Outcome)
-                    .IsRequired()
                     .HasColumnName("outcome")
                     .HasMaxLength(150)
                     .IsUnicode(false);
@@ -358,7 +326,6 @@ namespace BcmmOja.Models
                 entity.Property(e => e.Record).HasColumnName("record");
 
                 entity.Property(e => e.TypeOfCriminalAct)
-                    .IsRequired()
                     .HasColumnName("type_of_criminal_act")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -366,8 +333,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.CriminalRecord)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__criminal___fk_ap__70DDC3D8");
+                    .HasConstraintName("FK__criminal___fk_ap__73BA3083");
             });
 
             modelBuilder.Entity<DisciplinaryRecord>(entity =>
@@ -375,13 +341,12 @@ namespace BcmmOja.Models
                 entity.ToTable("disciplinary_record");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__discipli__3213E83E045F238A")
+                    .HasName("UQ__discipli__3213E83E8D82E3E3")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.AwardSanction)
-                    .IsRequired()
                     .HasColumnName("award_sanction")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -395,7 +360,6 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.NameOfInstitute)
-                    .IsRequired()
                     .HasColumnName("name_of_institute")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -410,7 +374,6 @@ namespace BcmmOja.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.TypeOfMisconduct)
-                    .IsRequired()
                     .HasColumnName("type_of_misconduct")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -418,8 +381,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.DisciplinaryRecord)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__disciplin__fk_ap__71D1E811");
+                    .HasConstraintName("FK__disciplin__fk_ap__76969D2E");
             });
 
             modelBuilder.Entity<Experience>(entity =>
@@ -427,7 +389,7 @@ namespace BcmmOja.Models
                 entity.ToTable("experience");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__experien__3213E83EED51E03D")
+                    .HasName("UQ__experien__3213E83E1F6A3D9E")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
@@ -437,13 +399,11 @@ namespace BcmmOja.Models
                     .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.Description)
-                    .IsRequired()
                     .HasColumnName("description")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Employer)
-                    .IsRequired()
                     .HasColumnName("employer")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -453,7 +413,6 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.Position)
-                    .IsRequired()
                     .HasColumnName("position")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -466,7 +425,6 @@ namespace BcmmOja.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.ReasonForLeaving)
-                    .IsRequired()
                     .HasColumnName("reason_for_leaving")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -476,8 +434,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.Experience)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__experienc__fk_ap__72C60C4A");
+                    .HasConstraintName("FK__experienc__fk_ap__797309D9");
             });
 
             modelBuilder.Entity<General>(entity =>
@@ -485,7 +442,7 @@ namespace BcmmOja.Models
                 entity.ToTable("general");
 
                 entity.HasIndex(e => e.FkApplicantId)
-                    .HasName("UQ__general__44609BBDFE19A799")
+                    .HasName("UQ__general__44609BBDB61747B4")
                     .IsUnique();
 
                 entity.Property(e => e.Id)
@@ -514,8 +471,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithOne(p => p.General)
                     .HasForeignKey<General>(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__general__fk_appl__73BA3083");
+                    .HasConstraintName("FK__general__fk_appl__7C4F7684");
             });
 
             modelBuilder.Entity<Login>(entity =>
@@ -523,15 +479,15 @@ namespace BcmmOja.Models
                 entity.ToTable("login");
 
                 entity.HasIndex(e => e.Email)
-                    .HasName("UQ__login__AB6E61645FB40C07")
+                    .HasName("UQ__login__AB6E6164F4E838FD")
                     .IsUnique();
 
                 entity.HasIndex(e => e.FkApplicantId)
-                    .HasName("UQ__login__44609BBD702D55E7")
+                    .HasName("UQ__login__44609BBD1B8A164F")
                     .IsUnique();
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__login__3213E83E3CBFF98C")
+                    .HasName("UQ__login__3213E83E8BB91BE9")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
@@ -541,7 +497,6 @@ namespace BcmmOja.Models
                     .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.Email)
-                    .IsRequired()
                     .HasColumnName("email")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -561,8 +516,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithOne(p => p.Login)
                     .HasForeignKey<Login>(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__login__fk_applic__74AE54BC");
+                    .HasConstraintName("FK__login__fk_applic__7F2BE32F");
             });
 
             modelBuilder.Entity<LoginLog>(entity =>
@@ -570,7 +524,7 @@ namespace BcmmOja.Models
                 entity.ToTable("login_log");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__login_lo__3213E83E6BC415A9")
+                    .HasName("UQ__login_lo__3213E83E1216859D")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
@@ -580,7 +534,6 @@ namespace BcmmOja.Models
                     .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.Email)
-                    .IsRequired()
                     .HasColumnName("email")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -590,8 +543,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.LoginLog)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__login_log__fk_ap__75A278F5");
+                    .HasConstraintName("FK__login_log__fk_ap__02084FDA");
             });
 
             modelBuilder.Entity<PoliticalOffice>(entity =>
@@ -599,7 +551,7 @@ namespace BcmmOja.Models
                 entity.ToTable("political_office");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__politica__3213E83E4537201B")
+                    .HasName("UQ__politica__3213E83EDC457CD5")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
@@ -613,13 +565,11 @@ namespace BcmmOja.Models
                 entity.Property(e => e.PoliticalOffice1).HasColumnName("political_office");
 
                 entity.Property(e => e.PoliticalParty)
-                    .IsRequired()
                     .HasColumnName("political_party")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Position)
-                    .IsRequired()
                     .HasColumnName("position")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -627,8 +577,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.PoliticalOffice)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__political__fk_ap__76969D2E");
+                    .HasConstraintName("FK__political__fk_ap__04E4BC85");
             });
 
             modelBuilder.Entity<ProfessionalMembership>(entity =>
@@ -646,13 +595,11 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.MembershipNumber)
-                    .IsRequired()
                     .HasColumnName("membership_number")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.ProfessionalBody)
-                    .IsRequired()
                     .HasColumnName("professional_body")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -660,8 +607,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.ProfessionalMembership)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__professio__fk_ap__778AC167");
+                    .HasConstraintName("FK__professio__fk_ap__07C12930");
             });
 
             modelBuilder.Entity<Qualification>(entity =>
@@ -677,19 +623,16 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.NameOfInstitute)
-                    .IsRequired()
                     .HasColumnName("name_of_institute")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.NameOfQualification)
-                    .IsRequired()
                     .HasColumnName("name_of_qualification")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.TypeOfQualification)
-                    .IsRequired()
                     .HasColumnName("type_of_qualification")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -699,8 +642,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.Qualification)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__qualifica__fk_ap__787EE5A0");
+                    .HasConstraintName("FK__qualifica__fk_ap__0A9D95DB");
             });
 
             modelBuilder.Entity<Reference>(entity =>
@@ -708,13 +650,12 @@ namespace BcmmOja.Models
                 entity.ToTable("reference");
 
                 entity.HasIndex(e => e.Id)
-                    .HasName("UQ__referenc__3213E83E87928314")
+                    .HasName("UQ__referenc__3213E83E947BF04C")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.CellNumber)
-                    .IsRequired()
                     .HasColumnName("cell_number")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -724,7 +665,6 @@ namespace BcmmOja.Models
                     .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.Email)
-                    .IsRequired()
                     .HasColumnName("email")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -732,19 +672,16 @@ namespace BcmmOja.Models
                 entity.Property(e => e.FkApplicantId).HasColumnName("fk_applicant_id");
 
                 entity.Property(e => e.Name)
-                    .IsRequired()
                     .HasColumnName("name")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Relationship)
-                    .IsRequired()
                     .HasColumnName("relationship")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.TelNumber)
-                    .IsRequired()
                     .HasColumnName("tel_number")
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -752,8 +689,7 @@ namespace BcmmOja.Models
                 entity.HasOne(d => d.FkApplicant)
                     .WithMany(p => p.Reference)
                     .HasForeignKey(d => d.FkApplicantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__reference__fk_ap__797309D9");
+                    .HasConstraintName("FK__reference__fk_ap__0D7A0286");
             });
 
             modelBuilder.Entity<Vacancy>(entity =>

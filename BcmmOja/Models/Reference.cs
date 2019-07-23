@@ -11,8 +11,8 @@ namespace BcmmOja.Models
         public string TelNumber { get; set; }
         public string CellNumber { get; set; }
         public string Email { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public int FkApplicantId { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public int? FkApplicantId { get; set; }
 
         public Applicant FkApplicant { get; set; }
     }

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,118 +19,148 @@ namespace BcmmOja.Controllers
 
         public GeneralsController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/Generals
         [HttpGet]
-        public IEnumerable<General> GetGeneral()
+        public APIResponse GetGeneral()
         {
-            return _context.General;
+            try
+            {
+                return new APIResponse(200, "Success", _context.General);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/Generals/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetGeneral([FromRoute] int id)
+        public async Task<APIResponse> GetGeneral([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var general = await _context.General.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (general == null)
+                {
+                    return new APIResponse(404, $"Could not find a genaral record with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"General records found.", general);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server error!", ex.InnerException);
             }
 
-            var general = await _context.General.FindAsync(id);
-
-            if (general == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(general);
         }
 
         // PUT: api/Generals/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGeneral([FromRoute] int id, [FromBody] General general)
+        public async Task<APIResponse> PutGeneral([FromRoute] int id, [FromBody] General general)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != general.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(general).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
                 if (!GeneralExists(id))
                 {
-                    return NotFound();
+                    return new APIResponse(404, "Not found!");
                 }
-                else
+                if (id != general.Id)
                 {
-                    throw;
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {general.Id}.", ModelStateExtension.AllErrors(ModelState));
                 }
-            }
 
-            return NoContent();
+                _context.Entry(general).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"General details updated successfully.", general);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // POST: api/Generals
-        [HttpPost]
-        public async Task<IActionResult> PostGeneral([FromBody] General general)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostGeneral([FromRoute] int id, [FromBody] General general)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            _context.General.Add(general);
+            var applicantId = id;
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new General()
+                {
+                    PhysicalMentalCondition = general.PhysicalMentalCondition,
+                    ConflictOfInterest = general.ConflictOfInterest,
+                    ConflictOfInterestReason = general.ConflictOfInterestReason,
+                    CommenceDate = general.CommenceDate,
+                    PositionTermsAccepted = general.PositionTermsAccepted,
+                    CreatedAt = DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.General.AddAsync(aData);
                 await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
             }
-            catch (DbUpdateException)
+            catch (SystemException ex)
             {
-                if (GeneralExists(general.Id))
-                {
-                    return new StatusCodeResult(StatusCodes.Status409Conflict);
-                }
-                else
-                {
-                    throw;
-                }
+                return new APIResponse(500, "Server Error", ex.InnerException);
             }
 
-            return CreatedAtAction("GetGeneral", new { id = general.Id }, general);
         }
 
         // DELETE: api/Generals/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGeneral([FromRoute] int id)
+        public async Task<APIResponse> DeleteGeneral([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var generalId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
 
-            var general = await _context.General.FindAsync(id);
-            if (general == null)
+                var generalRec = await _context.General.FindAsync(generalId);
+
+                if (generalRec == null)
+                {
+                    return new APIResponse(404, $"Not found! {generalId}");
+                }
+
+                _context.General.Remove(generalRec);
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Success! Deleted record with id {generalId}", generalRec);
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.General.Remove(general);
-            await _context.SaveChangesAsync();
-
-            return Ok(general);
         }
 
         private bool GeneralExists(int id)

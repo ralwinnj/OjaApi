@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,104 +19,105 @@ namespace BcmmOja.Controllers
 
         public ComputerLiteraciesController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/ComputerLiteracies
         [HttpGet]
-        public IEnumerable<ComputerLiteracy> GetComputerLiteracy()
+        public APIResponse GetComputerLiteracy()
         {
-            return _context.ComputerLiteracy;
+            try
+            {
+                return new APIResponse(200, $"Success!", _context.ComputerLiteracy);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Serve error!", ex.InnerException);
+            }
         }
 
         // GET: api/ComputerLiteracies/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetComputerLiteracy([FromRoute] int id)
+        public async Task<APIResponse> GetComputerLiteracy([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var computerLiteracy = await _context.ComputerLiteracy.FindAsync(id);
-
-            if (computerLiteracy == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(computerLiteracy);
-        }
-
-        // PUT: api/ComputerLiteracies/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutComputerLiteracy([FromRoute] int id, [FromBody] ComputerLiteracy computerLiteracy)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != computerLiteracy.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(computerLiteracy).State = EntityState.Modified;
-
+            var applicantId = id;
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ComputerLiteracyExists(id))
+                if (!ModelState.IsValid)
                 {
-                    return NotFound();
+                    return new APIResponse(400, $"Validation error.", ModelStateExtension.AllErrors(ModelState));
                 }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return NoContent();
+                var computerLiteracy = await _context.ComputerLiteracy.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (computerLiteracy == null)
+                {
+                    return new APIResponse(404, $"Could not find applicants computer literacies with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"Computer literacies found.", computerLiteracy);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // POST: api/ComputerLiteracies
-        [HttpPost]
-        public async Task<IActionResult> PostComputerLiteracy([FromBody] ComputerLiteracy computerLiteracy)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostComputerLiteracy([FromRoute] int id, [FromBody] ComputerLiteracy body)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new ComputerLiteracy()
+                {
+                    Skill = body.Skill,
+                    Competency = body.Competency,
+                    CreatedAt = body.CreatedAt ?? DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.ComputerLiteracy.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
             }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Server error!", ex.InnerException);
+            };
 
-            _context.ComputerLiteracy.Add(computerLiteracy);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetComputerLiteracy", new { id = computerLiteracy.Id }, computerLiteracy);
         }
 
         // DELETE: api/ComputerLiteracies/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteComputerLiteracy([FromRoute] int id)
+        public async Task<APIResponse> DeleteComputerLiteracy([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var compunterLiteracyId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
 
-            var computerLiteracy = await _context.ComputerLiteracy.FindAsync(id);
-            if (computerLiteracy == null)
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+                var aData = new ComputerLiteracy()
+                {
+                    Id = compunterLiteracyId
+                };
+                _context.ComputerLiteracy.Remove(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success! Deleted record with id {compunterLiteracyId}", aData);
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.ComputerLiteracy.Remove(computerLiteracy);
-            await _context.SaveChangesAsync();
-
-            return Ok(computerLiteracy);
         }
 
         private bool ComputerLiteracyExists(int id)

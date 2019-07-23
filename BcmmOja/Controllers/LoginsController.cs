@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,105 +19,71 @@ namespace BcmmOja.Controllers
 
         public LoginsController(bcmm_ojaContext context)
         {
-            _context = context;
-        }
-
-        // GET: api/Logins
-        [HttpGet]
-        public IEnumerable<Login> GetLogin()
-        {
-            return _context.Login;
-        }
-
-        // GET: api/Logins/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetLogin([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var login = await _context.Login.FindAsync(id);
-
-            if (login == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(login);
-        }
-
-        // PUT: api/Logins/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutLogin([FromRoute] int id, [FromBody] Login login)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != login.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(login).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!LoginExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            _context = new bcmm_ojaContext();
         }
 
         // POST: api/Logins
         [HttpPost]
-        public async Task<IActionResult> PostLogin([FromBody] Login login)
+        public async Task<APIResponse> PostLogin([FromBody] Login login)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var loginData = _context.Login.FirstOrDefault(x => x.Email.ToLower() == login.Email.ToLower());
+                if (loginData == null)
+                {
+                    return new APIResponse(404, $"User with email {login.Email} does not exist");
+                }
+                if (loginData.Password != login.Password)
+                {
+                    return new APIResponse(409, "Incorrect password");
+                }
+
+                await _context.LoginLog.AddAsync(
+                    new LoginLog()
+                    {
+                        Email = loginData.Email,
+                        CreatedAt = DateTime.Now,
+                        FkApplicantId = loginData.FkApplicantId
+                    }
+                );
+
+                loginData.LastLogin = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                loginData.Password = null;
+                return new APIResponse(200, $"Success!", loginData);
             }
-
-            _context.Login.Add(login);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetLogin", new { id = login.Id }, login);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
-        // DELETE: api/Logins/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteLogin([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //// DELETE: api/Logins/5
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteLogin([FromRoute] int id)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            var login = await _context.Login.FindAsync(id);
-            if (login == null)
-            {
-                return NotFound();
-            }
+        //    var login = await _context.Login.FindAsync(id);
+        //    if (login == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            _context.Login.Remove(login);
-            await _context.SaveChangesAsync();
+        //    _context.Login.Remove(login);
+        //    await _context.SaveChangesAsync();
 
-            return Ok(login);
-        }
+        //    return Ok(login);
+        //}
 
         private bool LoginExists(int id)
         {

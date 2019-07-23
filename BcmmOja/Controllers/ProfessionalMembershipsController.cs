@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,104 +19,139 @@ namespace BcmmOja.Controllers
 
         public ProfessionalMembershipsController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/ProfessionalMemberships
         [HttpGet]
-        public IEnumerable<ProfessionalMembership> GetProfessionalMembership()
+        public APIResponse GetProfessionalMembership()
         {
-            return _context.ProfessionalMembership;
+            try
+            {
+                return new APIResponse(200, "Success", _context.ProfessionalMembership);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/ProfessionalMemberships/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProfessionalMembership([FromRoute] int id)
+        public async Task<APIResponse> GetProfessionalMembership([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var professionalMembership = await _context.ProfessionalMembership.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (professionalMembership == null)
+                {
+                    return new APIResponse(404, $"Could not find a professional membership record with id of {applicantId}.");
+                }
+                return new APIResponse(200, $"Professional Membership records found.", professionalMembership);
             }
-
-            var professionalMembership = await _context.ProfessionalMembership.FindAsync(id);
-
-            if (professionalMembership == null)
+            catch (System.Exception ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server error!", ex.InnerException);
             }
-
-            return Ok(professionalMembership);
         }
 
         // PUT: api/ProfessionalMemberships/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProfessionalMembership([FromRoute] int id, [FromBody] ProfessionalMembership professionalMembership)
+        public async Task<APIResponse> PutProfessionalMembership([FromRoute] int id, [FromBody] ProfessionalMembership professionalMembership)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != professionalMembership.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(professionalMembership).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
                 if (!ProfessionalMembershipExists(id))
                 {
-                    return NotFound();
+                    return new APIResponse(404, "Not found!");
                 }
-                else
+                if (id != professionalMembership.Id)
                 {
-                    throw;
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {professionalMembership.Id}.", ModelStateExtension.AllErrors(ModelState));
                 }
-            }
 
-            return NoContent();
+                _context.Entry(professionalMembership).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Professional Membership details updated successfully.", professionalMembership);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // POST: api/ProfessionalMemberships
-        [HttpPost]
-        public async Task<IActionResult> PostProfessionalMembership([FromBody] ProfessionalMembership professionalMembership)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostProfessionalMembership([FromRoute] int id, [FromBody] ProfessionalMembership professionalMembership)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+                var aData = new ProfessionalMembership()
+                {
+                    ProfessionalBody = professionalMembership.ProfessionalBody,
+                    MembershipNumber = professionalMembership.MembershipNumber,
+                    ExpiryDate = professionalMembership.ExpiryDate,
+                    CreatedAt = DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+                await _context.ProfessionalMembership.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
             }
-
-            _context.ProfessionalMembership.Add(professionalMembership);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetProfessionalMembership", new { id = professionalMembership.Id }, professionalMembership);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // DELETE: api/ProfessionalMemberships/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProfessionalMembership([FromRoute] int id)
+        public async Task<APIResponse> DeleteProfessionalMembership([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var professionalMembershipId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
 
-            var professionalMembership = await _context.ProfessionalMembership.FindAsync(id);
-            if (professionalMembership == null)
+                var professionalMembership = await _context.General.FindAsync(id);
+
+                if (professionalMembership == null)
+                {
+                    return new APIResponse(404, $"Not found! {professionalMembershipId}");
+                }
+
+                _context.General.Remove(professionalMembership);
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Success! Deleted record with id {professionalMembershipId}", professionalMembership);
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.ProfessionalMembership.Remove(professionalMembership);
-            await _context.SaveChangesAsync();
-
-            return Ok(professionalMembership);
         }
 
         private bool ProfessionalMembershipExists(int id)

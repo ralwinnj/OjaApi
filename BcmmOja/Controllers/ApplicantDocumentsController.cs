@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -22,99 +24,104 @@ namespace BcmmOja.Controllers
 
         // GET: api/ApplicantDocuments
         [HttpGet]
-        public IEnumerable<ApplicantDocument> GetApplicantDocument()
+        public APIResponse GetApplicantDocument()
         {
-            return _context.ApplicantDocument;
+            try
+            {
+                return new APIResponse(200, $"Success", _context.ApplicantDocument);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Server error", ex.InnerException);
+            }
+            
         }
 
         // GET: api/ApplicantDocuments/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetApplicantDocument([FromRoute] int id)
+        public async Task<APIResponse> GetApplicantDocument([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var applicantDocument = await _context.ApplicantDocument.FindAsync(id);
-
-            if (applicantDocument == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(applicantDocument);
-        }
-
-        // PUT: api/ApplicantDocuments/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutApplicantDocument([FromRoute] int id, [FromBody] ApplicantDocument applicantDocument)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != applicantDocument.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(applicantDocument).State = EntityState.Modified;
-
+            var applicantId = id;
             try
             {
-                await _context.SaveChangesAsync();
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation error.", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var applicantDocument = await _context.ApplicantDocument.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (applicantDocument == null)
+                {
+                    return new APIResponse(404, $"Could not find applicants documents with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"Applicant Documents found.", applicantDocument);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (SystemException ex)
             {
-                if (!ApplicantDocumentExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return new APIResponse(500, "Server Error", ex.InnerException);
             }
 
-            return NoContent();
         }
 
         // POST: api/ApplicantDocuments
-        [HttpPost]
-        public async Task<IActionResult> PostApplicantDocument([FromBody] ApplicantDocument applicantDocument)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostApplicantDocument([FromRoute] int id, [FromBody] ApplicantDocument applicantDocument)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new ApplicantDocument()
+                {
+                    DocumentFormat = applicantDocument.DocumentFormat,
+                    DocumentName = applicantDocument.DocumentName,
+                    DocumentPath = applicantDocument.DocumentPath,
+                    DocumentType = applicantDocument.DocumentType,
+                    CreatedAt = applicantDocument.CreatedAt ?? DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.ApplicantDocument.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
+
             }
-
-            _context.ApplicantDocument.Add(applicantDocument);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetApplicantDocument", new { id = applicantDocument.Id }, applicantDocument);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // DELETE: api/ApplicantDocuments/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplicantDocument([FromRoute] int id)
+        public async Task<APIResponse> DeleteApplicantDocument([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var applicantDocumentId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
 
-            var applicantDocument = await _context.ApplicantDocument.FindAsync(id);
-            if (applicantDocument == null)
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+                var aData = new ApplicantDocument()
+                {
+                    Id = applicantDocumentId
+                };
+                _context.ApplicantDocument.Remove(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success! Deleted record with id {applicantDocumentId}", aData);
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.ApplicantDocument.Remove(applicantDocument);
-            await _context.SaveChangesAsync();
-
-            return Ok(applicantDocument);
         }
 
         private bool ApplicantDocumentExists(int id)

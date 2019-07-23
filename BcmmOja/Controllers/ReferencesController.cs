@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,83 +19,115 @@ namespace BcmmOja.Controllers
 
         public ReferencesController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/References
         [HttpGet]
-        public IEnumerable<Reference> GetReference()
+        public APIResponse GetReference()
         {
-            return _context.Reference;
+            try
+            {
+                return new APIResponse(200, "Success!", _context.Reference);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/References/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetReference([FromRoute] int id)
+        public async Task<APIResponse> GetReference([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var reference = await _context.Reference.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (reference == null)
+                {
+                    return new APIResponse(404, $"Could not find reference(s) record with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"Reference(s) records found.", reference);
             }
-
-            var reference = await _context.Reference.FindAsync(id);
-
-            if (reference == null)
+            catch (System.Exception ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server error!", ex.InnerException);
             }
-
-            return Ok(reference);
         }
 
         // PUT: api/References/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutReference([FromRoute] int id, [FromBody] Reference reference)
+        public async Task<APIResponse> PutReference([FromRoute] int id, [FromBody] Reference reference)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != reference.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(reference).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
                 if (!ReferenceExists(id))
                 {
-                    return NotFound();
+                    return new APIResponse(404, "Not found!");
                 }
-                else
+                if (id != reference.Id)
                 {
-                    throw;
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {reference.Id}.", ModelStateExtension.AllErrors(ModelState));
                 }
+
+                _context.Entry(reference).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Reference details updated successfully.", reference);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
 
-            return NoContent();
         }
 
         // POST: api/References
-        [HttpPost]
-        public async Task<IActionResult> PostReference([FromBody] Reference reference)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostReference([FromRoute] int id, [FromBody] Reference reference)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new Reference()
+                {
+                    Name = reference.Name,
+                    Relationship = reference.Relationship,
+                    TelNumber = reference.TelNumber,
+                    CellNumber = reference.CellNumber,
+                    Email = reference.Email,
+                    CreatedAt = DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.Reference.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
+
             }
-
-            _context.Reference.Add(reference);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetReference", new { id = reference.Id }, reference);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // DELETE: api/References/5

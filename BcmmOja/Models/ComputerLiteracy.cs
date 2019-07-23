@@ -8,8 +8,8 @@ namespace BcmmOja.Models
         public int Id { get; set; }
         public string Skill { get; set; }
         public string Competency { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public int FkApplicantId { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public int? FkApplicantId { get; set; }
 
         public Applicant FkApplicant { get; set; }
     }

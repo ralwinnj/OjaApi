@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,104 +19,146 @@ namespace BcmmOja.Controllers
 
         public QualificationsController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/Qualifications
         [HttpGet]
-        public IEnumerable<Qualification> GetQualification()
+        public APIResponse GetQualification()
         {
-            return _context.Qualification;
+            try
+            {
+                return new APIResponse(200, "Success!", _context.Qualification);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/Qualifications/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetQualification([FromRoute] int id)
+        public async Task<APIResponse> GetQualification([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var qualification = await _context.Qualification.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (qualification == null)
+                {
+                    return new APIResponse(404, $"Could not find qualification(s) record with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"Qualification(s) records found.", qualification);
             }
-
-            var qualification = await _context.Qualification.FindAsync(id);
-
-            if (qualification == null)
+            catch (System.Exception ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server error!", ex.InnerException);
             }
-
-            return Ok(qualification);
         }
 
         // PUT: api/Qualifications/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutQualification([FromRoute] int id, [FromBody] Qualification qualification)
+        public async Task<APIResponse> PutQualification([FromRoute] int id, [FromBody] Qualification qualification)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != qualification.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(qualification).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
                 if (!QualificationExists(id))
                 {
-                    return NotFound();
+                    return new APIResponse(404, "Not found!");
                 }
-                else
+                if (id != qualification.Id)
                 {
-                    throw;
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {qualification.Id}.", ModelStateExtension.AllErrors(ModelState));
                 }
+
+
+                _context.Entry(qualification).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Qualification details updated successfully.", qualification);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
 
-            return NoContent();
         }
 
         // POST: api/Qualifications
-        [HttpPost]
-        public async Task<IActionResult> PostQualification([FromBody] Qualification qualification)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostQualification([FromRoute] int id, [FromBody] Qualification qualification)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new Qualification()
+                {
+                    NameOfInstitute = qualification.NameOfInstitute,
+                    NameOfQualification = qualification.NameOfQualification,
+                    TypeOfQualification = qualification.TypeOfQualification,
+                    YearObtained = qualification.YearObtained,
+                    CreatedAt = DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.Qualification.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
+
             }
-
-            _context.Qualification.Add(qualification);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetQualification", new { id = qualification.Id }, qualification);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // DELETE: api/Qualifications/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteQualification([FromRoute] int id)
+        public async Task<APIResponse> DeleteQualification([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var qualificationId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
 
-            var qualification = await _context.Qualification.FindAsync(id);
-            if (qualification == null)
+                var qualification = await _context.Qualification.FindAsync(qualificationId);
+
+                if (qualification == null)
+                {
+                    return new APIResponse(404, $"Not found! {qualificationId}");
+                }
+
+                _context.Qualification.Remove(qualification);
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Success! Deleted record with id {qualificationId}");
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.Qualification.Remove(qualification);
-            await _context.SaveChangesAsync();
-
-            return Ok(qualification);
         }
 
         private bool QualificationExists(int id)

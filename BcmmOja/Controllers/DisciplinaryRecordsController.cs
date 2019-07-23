@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,104 +19,142 @@ namespace BcmmOja.Controllers
 
         public DisciplinaryRecordsController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/DisciplinaryRecords
         [HttpGet]
-        public IEnumerable<DisciplinaryRecord> GetDisciplinaryRecord()
+        public APIResponse GetDisciplinaryRecord()
         {
-            return _context.DisciplinaryRecord;
+            try
+            {
+                return new APIResponse(200, "Success!", _context.DisciplinaryRecord);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/DisciplinaryRecords/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDisciplinaryRecord([FromRoute] int id)
+        public async Task<APIResponse> GetDisciplinaryRecord([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error", ModelStateExtension.AllErrors(ModelState));
+                }
+                var disciplinaryRecord = await _context.DisciplinaryRecord.Where(x => x.FkApplicantId == applicantId).ToListAsync();
+
+                if (disciplinaryRecord == null)
+                {
+                    return new APIResponse(404, $"Could not find a disciplinary record with id of {applicantId}.");
+                }
+
+                return new APIResponse(200, $"Disciplinary records found.", disciplinaryRecord);
             }
-
-            var disciplinaryRecord = await _context.DisciplinaryRecord.FindAsync(id);
-
-            if (disciplinaryRecord == null)
+            catch (System.Exception ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server error!", ex.InnerException);
             }
-
-            return Ok(disciplinaryRecord);
+           
         }
 
         // PUT: api/DisciplinaryRecords/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutDisciplinaryRecord([FromRoute] int id, [FromBody] DisciplinaryRecord disciplinaryRecord)
+        public async Task<APIResponse> PutDisciplinaryRecord([FromRoute] int id, [FromBody] DisciplinaryRecord disciplinaryRecord)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != disciplinaryRecord.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(disciplinaryRecord).State = EntityState.Modified;
 
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+                if (id != disciplinaryRecord.Id)
+                {
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {disciplinaryRecord.Id}.", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                _context.Entry(disciplinaryRecord).State = EntityState.Modified;
+
                 await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"Disciplinary record details updated successfully.", disciplinaryRecord);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (System.Exception ex)
             {
-                if (!DisciplinaryRecordExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
 
-            return NoContent();
+
+            
         }
 
         // POST: api/DisciplinaryRecords
-        [HttpPost]
-        public async Task<IActionResult> PostDisciplinaryRecord([FromBody] DisciplinaryRecord disciplinaryRecord)
+        [HttpPost("{id}")]
+        public async Task<APIResponse> PostDisciplinaryRecord([FromRoute] int id, [FromBody] DisciplinaryRecord disciplinaryRecord)
         {
-            if (!ModelState.IsValid)
+            var applicantId = id;
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var aData = new DisciplinaryRecord()
+                {
+                    Record = true,
+                    NameOfInstitute = disciplinaryRecord.NameOfInstitute,
+                    TypeOfMisconduct = disciplinaryRecord.TypeOfMisconduct,
+                    DateFinalized = disciplinaryRecord.DateFinalized,
+                    AwardSanction = disciplinaryRecord.AwardSanction,
+                    Resign = disciplinaryRecord.Resign,
+                    ResignReason = disciplinaryRecord.ResignReason,
+                    CreatedAt = DateTime.Now,
+                    FkApplicantId = applicantId
+                };
+
+                await _context.DisciplinaryRecord.AddAsync(aData);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success!", aData);
+
             }
-
-            _context.DisciplinaryRecord.Add(disciplinaryRecord);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetDisciplinaryRecord", new { id = disciplinaryRecord.Id }, disciplinaryRecord);
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error", ex.InnerException);
+            }
         }
 
         // DELETE: api/DisciplinaryRecords/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDisciplinaryRecord([FromRoute] int id)
+        public async Task<APIResponse> DeleteDisciplinaryRecord([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            var disciplinaryRecordId = id;
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation Error!", ModelStateExtension.AllErrors(ModelState));
+                }
+                var disciplinaryRecord = await _context.DisciplinaryRecord.FindAsync(id);
 
-            var disciplinaryRecord = await _context.DisciplinaryRecord.FindAsync(id);
-            if (disciplinaryRecord == null)
+                if (disciplinaryRecord == null)
+                {
+                    return new APIResponse(404, $"Not found! {disciplinaryRecordId}");
+                };
+                _context.DisciplinaryRecord.Remove(disciplinaryRecord);
+                await _context.SaveChangesAsync();
+                return new APIResponse(200, $"Success! Deleted record with id {disciplinaryRecordId}", disciplinaryRecord);
+            }
+            catch (SystemException ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server Error!", ex.InnerException);
             }
-
-            _context.DisciplinaryRecord.Remove(disciplinaryRecord);
-            await _context.SaveChangesAsync();
-
-            return Ok(disciplinaryRecord);
         }
 
         private bool DisciplinaryRecordExists(int id)

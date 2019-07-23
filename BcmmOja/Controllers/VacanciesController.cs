@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
+using VMD.RESTApiResponseWrapper.Core.Extensions;
 
 namespace BcmmOja.Controllers
 {
@@ -17,33 +19,48 @@ namespace BcmmOja.Controllers
 
         public VacanciesController(bcmm_ojaContext context)
         {
-            _context = context;
+            _context = new bcmm_ojaContext();
         }
 
         // GET: api/Vacancies
         [HttpGet]
-        public IEnumerable<Vacancy> GetVacancy()
+        public APIResponse GetVacancy()
         {
-            return _context.Vacancy;
+            try
+            {
+                return new APIResponse(200, "Success!", _context.Vacancy);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, "Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/Vacancies/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetVacancy([FromRoute] int id)
+        public async Task<APIResponse> GetVacancy([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation error!", ModelStateExtension.AllErrors(ModelState));
+                }
 
-            var vacancy = await _context.Vacancy.FindAsync(id);
+                var vacancy = await _context.Vacancy.FindAsync(id);
 
-            if (vacancy == null)
+                if (vacancy == null)
+                {
+                    return new APIResponse(404, "Record not found");
+                }
+
+                return new APIResponse(200, "Success!", vacancy);
+            } 
+            catch (System.Exception ex)
             {
-                return NotFound();
+                return new APIResponse(500, "Server error", ex.InnerException);
             }
-
-            return Ok(vacancy);
+            
         }
 
         // PUT: api/Vacancies/5

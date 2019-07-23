@@ -28,65 +28,77 @@ namespace BcmmOja.Controllers
         [HttpGet]
         public APIResponse GetApplicant()
         {
-            
-            return new APIResponse(200, $"Success", _context.Applicant);
+            try
+            {
+                return new APIResponse(200, $"Success", _context.Applicant);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Server Error!", ex.InnerException);
+            }
         }
 
         // GET: api/Applicants/5
         [HttpGet("{id}")]
         public async Task<APIResponse> GetApplicant([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return new APIResponse(400, $"Validation error.", ModelStateExtension.AllErrors(ModelState));
-                //return new APIResponse(400, $"Validation Error", BadRequest(ModelState));
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, $"Validation error.", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var applicant = await _context.Applicant.FindAsync(id);
+
+                if (applicant == null)
+                {
+                    return new APIResponse(404, $"Could not find applicant with id of {id}.");
+                }
+
+                return new APIResponse(200, $"Applicant found.", applicant);
+            }
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Server Error!", ex.InnerException);
             }
 
-            var applicant = await _context.Applicant.FindAsync(id);
-
-            if (applicant == null)
-            {
-                return new APIResponse(404, $"Could not find applicant with id of {id}.");
-                //return new APIResponse(404, $"Could not find applicant with id of {id}", NotFound());
-            }
-
-            return new APIResponse(200, $"Applicant found.", applicant);
         }
 
         // PUT: api/Applicants/5
         [HttpPut("{id}")]
         public async Task<APIResponse> PutApplicant([FromRoute] int id, [FromBody] Applicant applicant)
         {
-            if (!ModelState.IsValid)
-            {
-                return new APIResponse(400, $"Validation error", ModelStateExtension.AllErrors(ModelState));
-            }
-
-            if (id != applicant.Id)
-            {
-                return new APIResponse(401, $"Supplied id {id} does not match with the one in our records {applicant.Id}.", ModelStateExtension.AllErrors(ModelState));
-            }
-
-            _context.Entry(applicant).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
                 if (!ApplicantExists(id))
                 {
-                    return new APIResponse(404, $"Applicant not found.", id);
-                    //return NotFound();
+                    return new APIResponse(404, $"Applicant not found!", id);
                 }
-                else
+
+                if (!ModelState.IsValid)
                 {
-                    throw;
+                    return new APIResponse(400, $"Validation error!", ModelStateExtension.AllErrors(ModelState));
                 }
+
+                if (id != applicant.Id)
+                {
+                    return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {applicant.Id}.", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                _context.Entry(applicant).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                
+                return new APIResponse(200, $"Applicant details updated successfully.", applicant);
             }
-            return new APIResponse(200, $"Applicant details updated successfully.");
-           // return NoContent();
+            catch (SystemException ex)
+            {
+                return new APIResponse(500, $"Server Error!", ex.InnerException);
+            }
+            // return NoContent();
         }
 
         // POST: api/Applicants
@@ -158,10 +170,10 @@ namespace BcmmOja.Controllers
                     var a = new General()
                     {
                         CommenceDate = applicant.General.CommenceDate,
-                        ConflictOfInterest = applicant.General.ConflictOfInterest || false,
+                        ConflictOfInterest = applicant.General.ConflictOfInterest ?? false,
                         ConflictOfInterestReason = applicant.General.ConflictOfInterestReason ?? "",
                         CreatedAt = new DateTime(),
-                        PhysicalMentalCondition = applicant.General.PhysicalMentalCondition || false,
+                        PhysicalMentalCondition = applicant.General.PhysicalMentalCondition ?? false,
                         PositionTermsAccepted = applicant.General.PositionTermsAccepted,
                         FkApplicantId = applicant.Id
                     };
@@ -175,23 +187,23 @@ namespace BcmmOja.Controllers
                     await _context.Login.AddAsync(a);
                 };
 
-                if (applicant.ApplicantDocument != null)
-                {
-                    foreach (ApplicantDocument el in applicant.ApplicantDocument)
-                    {
-                        var b = new ApplicantDocument()
-                        {
-                            Document = el.Document,
-                            DocumentFormat = el.DocumentFormat,
-                            DocumentName = el.DocumentName,
-                            DocumentPath = el.DocumentPath,
-                            DocumentType = el.DocumentType,
-                            CreatedAt = new DateTime(),
-                            FkApplicantId = applicant.Id
-                        };
-                        await _context.ApplicantDocument.AddAsync(b);
-                    }
-                };
+                //if (applicant.ApplicantDocument != null)
+                //{
+                //    foreach (ApplicantDocument el in applicant.ApplicantDocument)
+                //    {
+                //        var b = new ApplicantDocument()
+                //        {
+                //            Document = el.Document,
+                //            DocumentFormat = el.DocumentFormat,
+                //            DocumentName = el.DocumentName,
+                //            DocumentPath = el.DocumentPath,
+                //            DocumentType = el.DocumentType,
+                //            CreatedAt = new DateTime(),
+                //            FkApplicantId = applicant.Id
+                //        };
+                //        await _context.ApplicantDocument.AddAsync(b);
+                //    }
+                // };
 
                 if (applicant.CriminalRecord != null)
                 {
@@ -200,7 +212,7 @@ namespace BcmmOja.Controllers
                     {
                         var b = new CriminalRecord()
                         {
-                            Record = el.Record || false,
+                            Record = el.Record ?? false,
                             TypeOfCriminalAct = el.TypeOfCriminalAct,
                             DateFinalized = el.DateFinalized,
                             Outcome = el.Outcome,
@@ -217,12 +229,12 @@ namespace BcmmOja.Controllers
                     {
                         var b = new DisciplinaryRecord()
                         {
-                            Record = el.Record || false,
+                            Record = el.Record ?? false,
                             NameOfInstitute = el.NameOfInstitute,
                             TypeOfMisconduct = el.TypeOfMisconduct,
                             DateFinalized = el.DateFinalized,
                             AwardSanction = el.AwardSanction,
-                            Resign = el.Resign || false,
+                            Resign = el.Resign ?? false,
                             ResignReason = el.ResignReason,
                             CreatedAt = new DateTime(),
                             FkApplicantId = applicant.Id
@@ -243,7 +255,7 @@ namespace BcmmOja.Controllers
                             EndDate = el.EndDate,
                             ReasonForLeaving = el.ReasonForLeaving,
                             Description = el.Description,
-                            PreviousMunicipality = el.PreviousMunicipality || false,
+                            PreviousMunicipality = el.PreviousMunicipality ?? false,
                             PreviousMunicipalityName = el.PreviousMunicipalityName,
                             CreatedAt = new DateTime(),
                             FkApplicantId = applicant.Id
@@ -258,7 +270,7 @@ namespace BcmmOja.Controllers
                     {
                         var b = new PoliticalOffice()
                         {
-                            PoliticalOffice1 = el.PoliticalOffice1 || false,
+                            PoliticalOffice1 = el.PoliticalOffice1 ?? false,
                             PoliticalParty = el.PoliticalParty,
                             Position = el.Position,
                             ExpiryDate = el.ExpiryDate,
@@ -340,7 +352,7 @@ namespace BcmmOja.Controllers
             var applicant = await _context.Applicant.FindAsync(id);
             if (applicant == null)
             {
-                return new APIResponse(404, $"User with id {id}, not found.");
+                return new APIResponse(404, $"Applicant with id {id}, not found.");
             }
 
             var login = await _context.Login.FirstAsync(x => x.FkApplicantId == id);
