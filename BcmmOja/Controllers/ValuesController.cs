@@ -1,82 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using MailKit.Net.Smtp;
-using MimeKit;
+﻿using Microsoft.AspNetCore.Mvc;
 using BcmmOja.Utility;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BcmmOja.Services;
+using BcmmOja.Models;
+using VMD.RESTApiResponseWrapper.Core.Wrappers;
 
 namespace BcmmOja.Controllers
 {
-
-
     [Route("api/[controller]")]
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private readonly IOptions<EmailSettings> _mailSettings;
+        private readonly EmailSettings _mailSettings;
+        private readonly bcmm_ojaContext _context;
         public ValuesController(IOptions<EmailSettings> mailSettings)
         {
-            _mailSettings = mailSettings;
+            _context = new bcmm_ojaContext();
+            _mailSettings = mailSettings.Value;
         }
         // GET api/values
         [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        public APIResponse Get()
         {
-
-            //MimeMessage message = new MimeMessage();
-
-            //MailboxAddress from = new MailboxAddress(_mailSettings.SenderName, _mailSettings.Sender);
-            //message.From.Add(from);
-
-            //MailboxAddress to = new MailboxAddress("Ralwinn", "ralwinnjohnson@gmail.com");
-            //message.To.Add(to);
-
-            //message.Subject = "This is email subject";
-            //BodyBuilder bodyBuilder = new BodyBuilder();
-            //bodyBuilder.HtmlBody = "<h1>Hello World!</h1>";
-
-            //message.Body = bodyBuilder.ToMessageBody();
-
-            //SmtpClient client = new SmtpClient();
-            //client.Connect(_mailSettings.MailServer, _mailSettings.MailPort, true);
-            //client.Authenticate(_mailSettings.Sender, _mailSettings.Password);
-            //client.Send(message);
-            //client.Disconnect(true);
-            //client.Dispose();
-            var mailer = new EmailSender(_mailSettings);
-            var data = mailer.SendEmail("", "", "");
-
-            return new string[] { data.ToString() };
+            return new APIResponse(200, "GET api/values Success", new string[] { "value 1", "value 2" });
         }
 
         // GET api/values/5
         [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+        public APIResponse Get(int id)
         {
-            return "value";
+            return new APIResponse(200, "GET api/values/:id Success", new string[] { "value 1", $"Your id is: {id}" });
         }
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody] string value)
+        public APIResponse Post([FromBody] string value)
         {
+            return new APIResponse(200, "POST api/values Success");
         }
 
         // PUT api/values/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public APIResponse Put(int id, [FromBody] string value)
         {
+            return new APIResponse(200, "PUT api/values Success", $"Your id is: {id}");
         }
 
         // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public APIResponse Delete(int id)
         {
+            return new APIResponse(200, "DELETE api/values Success", $"Your id is: {id}");
         }
     }
 }

@@ -49,7 +49,6 @@ namespace BcmmOja.Controllers
                 if (!ApplicantExists(id))
                 {
                     return new APIResponse(404, $"Applicant not found.", id);
-                    //return NotFound();
                 }
                 else
                 {
@@ -106,16 +105,15 @@ namespace BcmmOja.Controllers
                     Password = applicant.Password,
                     FkApplicantId = newApplicant.Id
                 };
+
                 await _context.Login.AddAsync(aData2);
                 await _context.SaveChangesAsync();
-
-
 
                 return new APIResponse(200, "User created successfully", applicant);
             }
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 
@@ -123,28 +121,36 @@ namespace BcmmOja.Controllers
         [HttpDelete("{id}")]
         public async Task<APIResponse> DeleteApplicant([FromRoute] int id)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return new APIResponse(400, "Validation error.", ModelStateExtension.AllErrors(ModelState));
+                if (!ModelState.IsValid)
+                {
+                    return new APIResponse(400, "Validation error.", ModelStateExtension.AllErrors(ModelState));
+                }
+
+                var applicant = await _context.Applicant.FindAsync(id);
+                if (applicant == null)
+                {
+                    return new APIResponse(404, $"User with id {id}, not found.");
+                }
+
+                var login = await _context.Login.FirstAsync(x => x.FkApplicantId == id);
+                if (login != null)
+                {
+                    _context.Login.Remove(login);
+                }
+
+                _context.Applicant.Remove(applicant);
+
+                await _context.SaveChangesAsync();
+
+                return new APIResponse(200, $"User successfully deleted", applicant);
+            }
+            catch (System.Exception ex)
+            {
+                return new APIResponse(500, "Server error", ex.Message);
             }
 
-            var applicant = await _context.Applicant.FindAsync(id);
-            if (applicant == null)
-            {
-                return new APIResponse(404, $"User with id {id}, not found.");
-            }
-
-            var login = await _context.Login.FirstAsync(x => x.FkApplicantId == id);
-            if (login != null)
-            {
-                _context.Login.Remove(login);
-            }
-
-            _context.Applicant.Remove(applicant);
-
-            await _context.SaveChangesAsync();
-
-            return new APIResponse(200, $"User successfully deleted", applicant);
         }
 
         private bool ApplicantExists(int id)

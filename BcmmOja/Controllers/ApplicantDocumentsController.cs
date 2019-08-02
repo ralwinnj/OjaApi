@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BcmmOja.Models;
@@ -32,7 +30,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server error", ex.InnerException);
+                return new APIResponse(500, $"Server error", ex.Message);
             }
             
         }
@@ -60,7 +58,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
 
         }
@@ -83,7 +81,7 @@ namespace BcmmOja.Controllers
                     DocumentName = applicantDocument.DocumentName,
                     DocumentPath = applicantDocument.DocumentPath,
                     DocumentType = applicantDocument.DocumentType,
-                    CreatedAt = applicantDocument.CreatedAt ?? DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     FkApplicantId = applicantId
                 };
 
@@ -94,7 +92,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 
@@ -120,7 +118,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 

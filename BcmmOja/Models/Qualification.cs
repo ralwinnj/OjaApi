@@ -9,9 +9,9 @@ namespace BcmmOja.Models
         public string NameOfInstitute { get; set; }
         public string NameOfQualification { get; set; }
         public string TypeOfQualification { get; set; }
-        public int? YearObtained { get; set; }
-        public DateTime? CreatedAt { get; set; }
-        public int? FkApplicantId { get; set; }
+        public int YearObtained { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public int FkApplicantId { get; set; }
 
         public Applicant FkApplicant { get; set; }
     }

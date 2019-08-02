@@ -32,7 +32,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Serve error!", ex.InnerException);
+                return new APIResponse(500, $"Serve error!", ex.Message);
             }
         }
 
@@ -59,7 +59,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 
@@ -79,7 +79,7 @@ namespace BcmmOja.Controllers
                 {
                     Skill = body.Skill,
                     Competency = body.Competency,
-                    CreatedAt = body.CreatedAt ?? DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     FkApplicantId = applicantId
                 };
 
@@ -89,7 +89,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server error!", ex.InnerException);
+                return new APIResponse(500, $"Server error!", ex.Message);
             };
 
         }
@@ -116,7 +116,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 

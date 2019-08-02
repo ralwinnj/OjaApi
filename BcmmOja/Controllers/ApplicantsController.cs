@@ -9,6 +9,8 @@ using BcmmOja.Models;
 using VMD.RESTApiResponseWrapper.Core.Wrappers;
 using VMD.RESTApiResponseWrapper.Core.Extensions;
 using System.Data.SqlClient;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace BcmmOja.Controllers
 {
@@ -34,7 +36,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server Error!", ex.InnerException);
+                return new APIResponse(500, $"Server Error!", ex.Message);
             }
         }
 
@@ -56,49 +58,145 @@ namespace BcmmOja.Controllers
                     return new APIResponse(404, $"Could not find applicant with id of {id}.");
                 }
 
-                return new APIResponse(200, $"Applicant found.", applicant);
+                var computerLiteracy = await _context.ComputerLiteracy
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Skill, x.Competency, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var login = await _context.Login
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Email, x.LastLogin, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var applicantDocument = await _context.ApplicantDocument
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Document, x.DocumentName, x.DocumentPath, x.DocumentFormat, x.DocumentType, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var criminalRecord = await _context.CriminalRecord
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Record, x.TypeOfCriminalAct, x.DateFinalized, x.Outcome, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var disciplinaryRecord = await _context.DisciplinaryRecord
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Record, x.NameOfInstitute, x.TypeOfMisconduct, x.DateFinalized, x.AwardSanction, x.Resign, x.ResignReason, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var experience = await _context.Experience
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Employer, x.Position, x.StartDate, x.EndDate, x.ReasonForLeaving, x.Description, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var professionalMembership = await _context.ProfessionalMembership
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.ProfessionalBody, x.MembershipNumber, x.ExpiryDate, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var qualification = await _context.Qualification
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.NameOfInstitute, x.NameOfQualification, x.TypeOfQualification, x.YearObtained, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var Reference = await _context.Reference
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Name, x.Relationship, x.TelNumber, x.CellNumber, x.Email, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var general = await _context.General
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.PhysicalMentalCondition, x.ConflictOfInterest, x.ConflictOfInterestReason, x.CommenceDate, x.PositionTermsAccepted, x.CreatedAt, x.FkApplicantId })
+                    .ToListAsync();
+
+                var applicantVacancy = await _context.ApplicantVacancy
+                    .Where(x => x.FkApplicantId == id)
+                    .Select(x => new { x.Id, x.Title, x.Directorate, x.Grade, x.Package, x.Reference, x.Requirements, x.Kpas, x.ClosingDate, x.Download, x.Contact, x.Author, x.Active, x.FkApplicant })
+                    .ToListAsync();
+
+                dynamic myApplicant = new JObject();
+                myApplicant.id = applicant.Id;
+                myApplicant.title = applicant.Title;
+                myApplicant.firstName = applicant.FirstName;
+                myApplicant.lastName = applicant.LastName;
+                myApplicant.gender = applicant.Gender;
+                myApplicant.race = applicant.Race;
+
+                myApplicant.dependant = applicant.Dependant;
+                myApplicant.dependantAge = applicant.DependantAge;
+                myApplicant.citizenship = applicant.Citizenship;
+                myApplicant.idNumber = applicant.IdNumber;
+                myApplicant.nationality = applicant.Nationality;
+                myApplicant.workPermitNumber = applicant.WorkPermitNumber;
+                myApplicant.sarsRegistered = applicant.SarsRegistered;
+                myApplicant.sarsTaxNumber = applicant.SarsTaxNumber;
+                myApplicant.driversLicence = applicant.DriversLicence;
+                myApplicant.driversLicenceType = applicant.DriversLicenceType;
+                myApplicant.address = applicant.Address;
+                myApplicant.language = applicant.Language;
+                myApplicant.phoneNumber = applicant.PhoneNumber;
+                myApplicant.natureOfEmployment = applicant.NatureOfEmployment;
+                myApplicant.relationship = applicant.Relationship;
+                myApplicant.heardAboutUs = applicant.HeardAboutUs;
+                myApplicant.marketingInfo = applicant.MarketingInfo;
+                myApplicant.birthDate = applicant.BirthDate;
+
+                var data = new object[1];
+
+                data[0] = new
+                {
+                    applicant = applicant,
+                    login = login,
+                    general = general,
+                    applicantVacancy = applicantVacancy,
+                    computerLiteracy = computerLiteracy,
+                    criminalRecord = criminalRecord,
+                    disciplinaryRecord = disciplinaryRecord,
+                    experience = experience,
+                    professionalMembership = professionalMembership,
+                    qualification = qualification,
+                    Reference = Reference,
+                };
+
+                return new APIResponse(200, $"Applicant found.", data);
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server Error!", ex.InnerException);
+                return new APIResponse(500, $"Server Error!", ex.Message);
             }
-
         }
 
         // PUT: api/Applicants/5
         [HttpPut("{id}")]
         public async Task<APIResponse> PutApplicant([FromRoute] int id, [FromBody] Applicant applicant)
         {
-
             try
             {
                 if (!ApplicantExists(id))
                 {
                     return new APIResponse(404, $"Applicant not found!", id);
-                }
+                };
 
                 if (!ModelState.IsValid)
                 {
                     return new APIResponse(400, $"Validation error!", ModelStateExtension.AllErrors(ModelState));
-                }
+                };
 
                 if (id != applicant.Id)
                 {
                     return new APIResponse(409, $"Supplied id {id} does not match with the one in our records {applicant.Id}.", ModelStateExtension.AllErrors(ModelState));
-                }
+                };
 
                 _context.Entry(applicant).State = EntityState.Modified;
 
                 await _context.SaveChangesAsync();
 
-                
+
                 return new APIResponse(200, $"Applicant details updated successfully.", applicant);
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server Error!", ex.InnerException);
+                return new APIResponse(500, $"Server Error!", ex.Message);
             }
-            // return NoContent();
         }
 
         // POST: api/Applicants
@@ -154,31 +252,6 @@ namespace BcmmOja.Controllers
 
                 await _context.Applicant.AddAsync(aData);
 
-                if (applicant.ComputerLiteracy != null)
-                {
-                    var a = new ComputerLiteracy()
-                    {
-                        Competency = applicant.ComputerLiteracy.Competency,
-                        Skill = applicant.ComputerLiteracy.Skill,
-                        FkApplicantId = applicant.Id
-                    };
-                    await _context.ComputerLiteracy.AddAsync(a);
-                };
-
-                if (applicant.General != null)
-                {
-                    var a = new General()
-                    {
-                        CommenceDate = applicant.General.CommenceDate,
-                        ConflictOfInterest = applicant.General.ConflictOfInterest ?? false,
-                        ConflictOfInterestReason = applicant.General.ConflictOfInterestReason ?? "",
-                        CreatedAt = new DateTime(),
-                        PhysicalMentalCondition = applicant.General.PhysicalMentalCondition ?? false,
-                        PositionTermsAccepted = applicant.General.PositionTermsAccepted,
-                        FkApplicantId = applicant.Id
-                    };
-                    await _context.General.AddAsync(a);
-                };
 
                 if (applicant.Login != null)
                 {
@@ -212,7 +285,7 @@ namespace BcmmOja.Controllers
                     {
                         var b = new CriminalRecord()
                         {
-                            Record = el.Record ?? false,
+                            Record = el.Record || false,
                             TypeOfCriminalAct = el.TypeOfCriminalAct,
                             DateFinalized = el.DateFinalized,
                             Outcome = el.Outcome,
@@ -229,12 +302,12 @@ namespace BcmmOja.Controllers
                     {
                         var b = new DisciplinaryRecord()
                         {
-                            Record = el.Record ?? false,
+                            Record = el.Record || false,
                             NameOfInstitute = el.NameOfInstitute,
                             TypeOfMisconduct = el.TypeOfMisconduct,
                             DateFinalized = el.DateFinalized,
                             AwardSanction = el.AwardSanction,
-                            Resign = el.Resign ?? false,
+                            Resign = el.Resign || false,
                             ResignReason = el.ResignReason,
                             CreatedAt = new DateTime(),
                             FkApplicantId = applicant.Id
@@ -255,7 +328,7 @@ namespace BcmmOja.Controllers
                             EndDate = el.EndDate,
                             ReasonForLeaving = el.ReasonForLeaving,
                             Description = el.Description,
-                            PreviousMunicipality = el.PreviousMunicipality ?? false,
+                            PreviousMunicipality = el.PreviousMunicipality || false,
                             PreviousMunicipalityName = el.PreviousMunicipalityName,
                             CreatedAt = new DateTime(),
                             FkApplicantId = applicant.Id
@@ -270,7 +343,7 @@ namespace BcmmOja.Controllers
                     {
                         var b = new PoliticalOffice()
                         {
-                            PoliticalOffice1 = el.PoliticalOffice1 ?? false,
+                            PoliticalOffice1 = el.PoliticalOffice1 || false,
                             PoliticalParty = el.PoliticalParty,
                             Position = el.Position,
                             ExpiryDate = el.ExpiryDate,
@@ -336,7 +409,7 @@ namespace BcmmOja.Controllers
             }
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 

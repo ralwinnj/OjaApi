@@ -32,7 +32,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server error", ex.InnerException);
+                return new APIResponse(500, $"Server error", ex.Message);
             }
         }
 
@@ -59,7 +59,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 
@@ -92,7 +92,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, $"Server Error!", ex.InnerException);
+                return new APIResponse(500, $"Server Error!", ex.Message);
             }
         }
 
@@ -114,7 +114,7 @@ namespace BcmmOja.Controllers
                     TypeOfCriminalAct = criminalRecord.TypeOfCriminalAct,
                     DateFinalized = criminalRecord.DateFinalized,
                     Outcome = criminalRecord.Outcome,
-                    CreatedAt = criminalRecord.CreatedAt ?? DateTime.Now,
+                    CreatedAt =  new DateTime(),
                     FkApplicantId = applicantId
                 };
 
@@ -125,7 +125,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
 
@@ -150,7 +150,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 

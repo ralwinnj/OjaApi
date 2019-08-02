@@ -32,7 +32,7 @@ namespace BcmmOja.Controllers
             }
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 
@@ -61,7 +61,7 @@ namespace BcmmOja.Controllers
             }
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server error!", ex.InnerException);
+                return new APIResponse(500, "Server error!", ex.Message);
             }
 
         }
@@ -93,7 +93,7 @@ namespace BcmmOja.Controllers
             }
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 
@@ -127,7 +127,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
 
         }
@@ -159,7 +159,7 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error!", ex.InnerException);
+                return new APIResponse(500, "Server Error!", ex.Message);
             }
         }
 

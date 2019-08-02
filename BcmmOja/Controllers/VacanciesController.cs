@@ -58,7 +58,7 @@ namespace BcmmOja.Controllers
             } 
             catch (System.Exception ex)
             {
-                return new APIResponse(500, "Server error", ex.InnerException);
+                return new APIResponse(500, "Server error", ex.Message);
             }
             
         }

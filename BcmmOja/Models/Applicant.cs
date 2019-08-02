@@ -7,7 +7,9 @@ namespace BcmmOja.Models
     {
         public Applicant()
         {
+            ApplicantDocument = new HashSet<ApplicantDocument>();
             ApplicantVacancy = new HashSet<ApplicantVacancy>();
+            ComputerLiteracy = new HashSet<ComputerLiteracy>();
             CriminalRecord = new HashSet<CriminalRecord>();
             DisciplinaryRecord = new HashSet<DisciplinaryRecord>();
             Experience = new HashSet<Experience>();
@@ -22,12 +24,13 @@ namespace BcmmOja.Models
         public string Title { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string Gender { get; set; }
         public string Race { get; set; }
         public bool? Dependant { get; set; }
         public string DependantAge { get; set; }
         public bool? Disability { get; set; }
         public string DisabilityNature { get; set; }
-        public bool? Citizenship { get; set; }
+        public bool Citizenship { get; set; }
         public string IdNumber { get; set; }
         public string Nationality { get; set; }
         public string WorkPermitNumber { get; set; }
@@ -38,12 +41,19 @@ namespace BcmmOja.Models
         public string Address { get; set; }
         public string Language { get; set; }
         public string PhoneNumber { get; set; }
-        public DateTime? CreatedAt { get; set; }
+        public string NatureOfEmployment { get; set; }
+        public string Relationship { get; set; }
+        public string Languages { get; set; }
+        public string HeardAboutUs { get; set; }
+        public bool? MarketingInfo { get; set; }
+        public DateTime? BirthDate { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-        public ComputerLiteracy ComputerLiteracy { get; set; }
         public General General { get; set; }
         public Login Login { get; set; }
+        public ICollection<ApplicantDocument> ApplicantDocument { get; set; }
         public ICollection<ApplicantVacancy> ApplicantVacancy { get; set; }
+        public ICollection<ComputerLiteracy> ComputerLiteracy { get; set; }
         public ICollection<CriminalRecord> CriminalRecord { get; set; }
         public ICollection<DisciplinaryRecord> DisciplinaryRecord { get; set; }
         public ICollection<Experience> Experience { get; set; }

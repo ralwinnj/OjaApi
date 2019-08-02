@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using BcmmOja.Models;
 using BcmmOja.Services;
 using BcmmOja.Utility;
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -33,8 +31,17 @@ namespace BcmmOja
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<bcmm_ojaContext>();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                   builder =>
+                   {
+                       builder.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+                   });
+            });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-            services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info
@@ -64,10 +71,12 @@ namespace BcmmOja
                 app.UseHsts();
             }
 
-            app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             app.UseHttpsRedirection();
+            
             // app.UseAPIResponseWrapperMiddleware();
 
+            app.UseCors("AllowAll");
+            app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             app.UseMvc();
             app.UseSwagger();
             app.UseSwaggerUI(c =>

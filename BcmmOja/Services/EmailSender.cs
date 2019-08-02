@@ -14,18 +14,23 @@ namespace BcmmOja.Services
     public class EmailSender
     {
         public readonly EmailSettings _mailSettings;
+        private EmailSettings mailSettings;
 
-    
         public EmailSender(IOptions<EmailSettings> mailSettings)
         {
             _mailSettings = mailSettings.Value;
         }
 
-        public EmailSender(EmailSettings mailSettings)
+        public EmailSender()
         {
         }
 
-        public bool SendEmail(string Message, string toName, string toEMailAddress )
+        public EmailSender(EmailSettings mailSettings)
+        {
+            this.mailSettings = mailSettings;
+        }
+
+        public async Task<bool> SendEmail(string ToName, string ToEmail, string ToSubject, string ToBody )
         {
             try
             {
@@ -34,25 +39,26 @@ namespace BcmmOja.Services
                 MailboxAddress from = new MailboxAddress(_mailSettings.SenderName, _mailSettings.Sender);
                 message.From.Add(from);
 
-                MailboxAddress to = new MailboxAddress("Ralwinn", "ralwinnjohnson@gmail.com");
+                MailboxAddress to = new MailboxAddress(ToName, ToEmail);
                 message.To.Add(to);
 
-                message.Subject = "This is email subject";
+                message.Subject = ToSubject;
                 BodyBuilder bodyBuilder = new BodyBuilder();
-                bodyBuilder.HtmlBody = "<h1>Hello World!</h1>";
+                bodyBuilder.HtmlBody = ToBody;
 
                 message.Body = bodyBuilder.ToMessageBody();
 
                 SmtpClient client = new SmtpClient();
-                client.Connect(_mailSettings.MailServer, _mailSettings.MailPort, true);
-                client.Authenticate(_mailSettings.Sender, _mailSettings.Password);
-                client.Send(message);
-                client.Disconnect(true);
+                await client.ConnectAsync(_mailSettings.MailServer, _mailSettings.MailPort, true);
+                await client.AuthenticateAsync(_mailSettings.Sender, _mailSettings.Password);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
                 client.Dispose();
                 return true;
             }
-            catch
+            catch (System.Exception ex)
             {
+                // throw ex;
                 return false;
             }
             

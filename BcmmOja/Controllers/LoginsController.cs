@@ -60,30 +60,9 @@ namespace BcmmOja.Controllers
             }
             catch (SystemException ex)
             {
-                return new APIResponse(500, "Server Error", ex.InnerException);
+                return new APIResponse(500, "Server Error", ex.Message);
             }
         }
-
-        //// DELETE: api/Logins/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteLogin([FromRoute] int id)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    var login = await _context.Login.FindAsync(id);
-        //    if (login == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Login.Remove(login);
-        //    await _context.SaveChangesAsync();
-
-        //    return Ok(login);
-        //}
 
         private bool LoginExists(int id)
         {
